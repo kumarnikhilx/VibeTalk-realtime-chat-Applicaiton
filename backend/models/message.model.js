@@ -17,6 +17,11 @@ message:{
 image:{
     type:String,
     default:""
+},
+status:{
+    type:String,
+    enum:["sent", "delivered", "read"],
+    default:"sent"
 }
 
 

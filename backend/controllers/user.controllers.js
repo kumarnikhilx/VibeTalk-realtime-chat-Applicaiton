@@ -1,5 +1,6 @@
 import uploadOnCloudinary from "../config/cloudinary.js"
 import User from "../models/user.model.js"
+import Conversation from "../models/conversation.model.js"
 
 export const getCurrentUser=async (req,res)=>{
 try {
@@ -41,7 +42,34 @@ export const getOtherUsers=async (req,res)=>{
         let users=await User.find({
             _id:{$ne:req.userId}
         }).select("-password")
-        return res.status(200).json(users)
+
+        const usersWithConversations = await Promise.all(users.map(async (user) => {
+            const conversation = await Conversation.findOne({
+                partcipants: { $all: [req.userId, user._id] }
+            }).populate("messages");
+
+            let latestMessage = null;
+            let unreadCount = 0;
+
+            if (conversation) {
+                if (conversation.messages.length > 0) {
+                    latestMessage = conversation.messages[conversation.messages.length - 1];
+                }
+                
+                // Calculate unread count (messages sent TO me that are NOT read)
+                unreadCount = conversation.messages.filter(
+                    msg => msg.receiver.toString() === req.userId && msg.status !== "read"
+                ).length;
+            }
+
+            return {
+                ...user._doc,
+                latestMessage,
+                unreadCount
+            };
+        }));
+
+        return res.status(200).json(usersWithConversations)
     } catch (error) {
         return res.status(500).json({message:`get other users error ${error}`})
     }
