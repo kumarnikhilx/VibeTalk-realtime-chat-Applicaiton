@@ -31,7 +31,7 @@ function Login() {
             } catch (error) {
                 console.log(error)
                 setLoading(false)
-                setErr(error.response.data.message)
+                setErr(error?.response?.data?.message || "Network error. Make sure VITE_BACKEND_URL is set correctly in Vercel.");
             }
         }
     
